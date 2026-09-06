@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>道順アプリCleanRoute</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700&display=swap');
+  :root {
+    --violet-deep: #4A3F8C;
+    --violet-mid: #6B5FC9;
+    --violet-pale: #EFEDFB;
+    --accent: #FF8A1F;
+    --ink: #1C1B29;
+    --sub: #6B6B78;
+    --line: #E4E2F0;
+    --bg: #FAF9FD;
+    --card: #FFFFFF;
+    --font-logo: "Noto Serif JP", serif;
+    --font-main: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+    --font-scale: 1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font-main);
+    background: var(--bg);
+    color: var(--ink);
+    zoom: var(--font-scale);
+    padding-bottom: 90px;
+  }
+  header {
+    background: linear-gradient(135deg, var(--violet-deep), var(--violet-mid));
+    padding: 0 20px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo-name-wrap { display: inline-flex; flex-direction: column; }
+  .logo-text {
+    font-family: var(--font-logo);
+    font-size: 21px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+  .logo-text span { color: #FFCA28; }
+  .logo-swoosh {
+    display: block;
+    width: 100%;
+    height: 6px;
+    margin-top: -2px;
+  }
+  .header-badge {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 10px;
+  }
+  nav.tabs {
+    display: flex;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  nav.tabs button {
+    flex: 1;
+    padding: 13px 0;
+    border: none;
+    background: none;
+    font-size: 13px;
+    color: var(--sub);
+    font-family: var(--font-main);
+    border-bottom: 2px solid transparent;
+  }
+  nav.tabs button.active {
+    color: var(--violet-deep);
+    border-bottom: 2px solid var(--violet-deep);
+    font-weight: 600;
+  }
+  main { padding: 16px; }
+  .panel {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(30,20,60,0.06);
+  }
+  .panel h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--violet-deep);
+  }
+  .seg {
+    display: flex;
+    background: var(--violet-pale);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 10px;
+  }
+  .seg button {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 9px 0;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--violet-deep);
+    font-family: var(--font-main);
+  }
+  .seg button.on {
+    background: var(--card);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  input[type=text] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: var(--font-main);
+    margin-bottom: 8px;
+  }
+  .add-row { display: flex; gap: 8px; }
+  .add-row input { flex: 1; margin-bottom: 0; }
+  button.primary {
+    background: var(--violet-deep);
+    color: #fff;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: var(--font-main);
+    white-space: nowrap;
+  }
+  button.big {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font-main);
+    margin-top: 4px;
+  }
+  button.big:disabled { background: #E4E2F0; color: #B0AEC0; }
+  ul.dest-list { list-style: none; margin: 0; padding: 0; }
+  ul.dest-list li {
+    display: block;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  ul.dest-list li:last-child { border-bottom: none; }
+  .dest-row-main { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .dest-fix-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .dest-fix-row label { font-size: 12px; color: var(--sub); flex-shrink: 0; }
+  .fix-rank-select {
+    font-size: 13px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-family: var(--font-main);
+    background: var(--card);
+    color: var(--ink);
+  }
+  .fix-rank-select.is-fixed { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .dest-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .to-cleansite-btn {
+    background: var(--violet-pale);
+    color: var(--violet-deep);
+    border: none;
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-size: 11px;
+    font-family: var(--font-main);
+    white-space: nowrap;
+  }
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--sub);
+    font-size: 18px;
+    padding: 0 6px;
+  }
+  .note {
+    font-size: 12px;
+    color: var(--sub);
+    background: var(--violet-pale);
+    padding: 8px 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+  }
+  .status { font-size: 13px; color: var(--sub); margin-top: 8px; min-height: 18px; }
+  .result-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .result-item:last-child { border-bottom: none; }
+  .result-item.visited { opacity: 0.45; }
+  .result-item.visited .result-text { text-decoration: line-through; }
+  .result-item.next {
+    background: var(--violet-pale);
+    border-radius: 12px;
+    padding: 14px 10px;
+    margin: 4px 0;
+    border-bottom: none;
+  }
+  .next-flag {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+  .visit-check {
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    accent-color: var(--violet-deep);
+  }
+  .badge {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--violet-deep);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .badge.start { background: var(--accent); }
+  .result-text { flex: 1; font-size: 14px; }
+  .result-text .dist { font-size: 12px; color: var(--sub); }
+  a.map-link {
+    font-size: 12px;
+    color: var(--violet-deep);
+    text-decoration: none;
+    border: 1px solid var(--violet-deep);
+    padding: 6px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .empty { text-align: center; color: var(--sub); font-size: 13px; padding: 30px 0; }
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-panel {
+    background: var(--card);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .modal-panel h3 { margin: 0 0 14px; font-size: 15px; color: var(--violet-deep); }
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+  .type-chip {
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sub);
+    background: var(--card);
+  }
+  .type-chip.selected { background: var(--violet-pale); border-color: var(--violet-deep); color: var(--violet-deep); }
+  .modal-panel label { font-size: 11px; font-weight: 700; color: var(--sub); display: block; margin-bottom: 4px; }
+  .modal-panel input[type=text], .modal-panel select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    font-family: var(--font-main);
+    font-size: 14px;
+    margin-bottom: 12px;
+    background: var(--card);
+    color: var(--ink);
+  }
+  .modal-addr { font-size: 12px; color: var(--sub); margin-bottom: 12px; }
+  .modal-btn-row { display: flex; gap: 8px; }
+  .modal-btn-row button { flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-family: var(--font-main); border: none; }
+  .modal-btn-cancel { background: var(--violet-pale); color: var(--violet-deep); }
+  .modal-btn-confirm { background: var(--violet-deep); color: #fff; font-weight: 600; }
+  .site-checklist {
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 4px 10px;
+  }
+  .site-checklist label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 2px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .site-checklist label:last-child { border-bottom: none; }
+  .site-checklist input { margin-top: 2px; flex-shrink: 0; }
+  .site-checklist .s-addr { display: block; font-size: 11px; color: var(--sub); }
+  .site-checklist .s-noaddr { display: block; font-size: 11px; color: var(--accent); }
+  .cs-search-input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-family: var(--font-main);
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .kana-index { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+  .kana-btn {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sub);
+    background: var(--card);
+    font-family: var(--font-main);
+  }
+  .kana-btn.active { background: var(--violet-deep); color: #fff; border-color: var(--violet-deep); }
+  .font-scale-btn {
+    border: 1.5px solid var(--line);
+    background: var(--card);
+    color: var(--violet-deep);
+    border-radius: 10px;
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-main);
+  }
+  .font-scale-btn.active {
+    background: var(--violet-pale);
+    border-color: var(--violet-deep);
+  }
+  .map-pref-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 2px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .map-pref-row:last-of-type { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-name-wrap">
+    <div class="logo-text">Clean<span>Route</span></div>
+    <svg class="logo-swoosh" viewBox="0 0 130 10" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <ellipse cx="65" cy="4.2" rx="8" ry="2.8" fill="#F4B400"/>
+      <polygon points="2,5 65,3.6 128,5 65,6.4" fill="#F4B400"/>
+    </svg>
+  </div>
+  <div class="header-badge">ルート検索</div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="input">入力</button>
+  <button data-tab="result">結果</button>
+  <button data-tab="settings">設定</button>
+  <button data-tab="guide">ガイド</button>
+</nav>
+
+<main>
+
+  <div id="tab-input">
+    <div class="panel">
+      <h3>出発地点</h3>
+      <div class="seg">
+        <button class="on" id="seg-gps">📍 現在地(GPS)</button>
+        <button id="seg-manual">住所を入力</button>
+      </div>
+      <input type="text" id="start-address" placeholder="出発地の住所を入力" style="display:none;">
+      <div class="status" id="gps-status">現在地を使用します(計算時に取得)</div>
+    </div>
+
+    <div class="panel">
+      <h3>🕐 到着予定時刻(任意)</h3>
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;">
+          <label style="font-size:11px;color:var(--sub);display:block;margin-bottom:4px;">出発時刻</label>
+          <input type="time" id="departure-time" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-family:var(--font-main);font-size:14px;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:11px;color:var(--sub);display:block;margin-bottom:4px;">各現場での滞在時間(分)</label>
+          <input type="text" inputmode="numeric" id="stay-minutes" value="30" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-family:var(--font-main);font-size:14px;">
+        </div>
+      </div>
+      <div class="note" style="margin-top:8px;">出発時刻を入力すると、結果画面に各現場への到着予定時刻を表示します。空欄のままなら表示しません。</div>
+    </div>
+
+    <div class="panel">
+      <h3>🔄 CleanSiteと同期</h3>
+      <div class="note">CleanSiteの「GitHub連携」で同期済みであれば、ここでその最新データを取得できます(名称・住所のみ)。うまく取得できない場合は、下のファイル読み込みをお使いください。</div>
+      <button class="primary" id="fetch-github-sync-btn" style="margin-top:8px;width:100%;">🔄 CleanSiteの最新データを取得</button>
+      <div class="status" id="github-sync-status"></div>
+    </div>
+
+    <div class="panel">
+      <h3>📂 CleanSiteのファイルを読み込む</h3>
+      <div class="note">iPhoneの仕様で、別々にホーム画面へ追加したアプリ同士はデータが自動共有されないことがあります。CleanSiteで書き出したファイルをここで読み込むと、現場・スポットのデータをCleanRoute側に取り込めます(取り込んだ内容はCleanRouteの中に保存され、次回以降は読み込み直さなくても使えます)。</div>
+      <input type="file" id="import-file-input" accept="application/json,.json" style="margin-top:8px;width:100%;">
+      <div class="status" id="import-status"></div>
+    </div>
+
+    <div class="panel">
+      <h3>🏢 CleanSiteの現場から追加</h3>
+      <div id="cleansite-panel-body"></div>
+    </div>
+
+    <div class="panel">
+      <h3>📍 CleanSiteのスポットから追加</h3>
+      <div id="cleansite-spot-panel-body"></div>
+    </div>
+
+    <div class="panel">
+      <h3>📋 CleanSiteの共有テキストから追加</h3>
+      <div class="note">iPhoneの仕様上、CleanSiteとCleanRouteをそれぞれ別々にホーム画面へ追加していると、上のCleanSite連携が使えないことがあります。その場合は、CleanSiteの各カードにある「🔗 教える」で共有した内容をここに貼り付けると、目的地として追加できます。</div>
+      <textarea id="paste-import-text" placeholder="ここにCleanSiteの「🔗 教える」の内容を貼り付け" style="width:100%;min-height:90px;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;font-family:var(--font-main);font-size:14px;"></textarea>
+      <button class="primary" id="paste-import-btn" style="margin-top:8px;width:100%;">貼り付けた内容から追加</button>
+    </div>
+
+    <div class="panel">
+      <h3>目的地(<span id="dest-count">0</span>件)</h3>
+      <div class="add-row">
+        <input type="text" id="new-dest" placeholder="住所や場所名を入力して追加">
+        <button class="primary" id="add-dest-btn">追加</button>
+      </div>
+      <ul class="dest-list" id="dest-list"></ul>
+      <button class="primary" id="save-route-btn" style="margin-top:12px;width:100%;">💾 このルートを保存</button>
+    </div>
+
+    <div class="panel">
+      <h3>📂 保存したルート</h3>
+      <div id="saved-routes-body"></div>
+    </div>
+
+    <button class="big" id="calc-btn" disabled>ルートを計算する</button>
+    <div class="status" id="calc-status"></div>
+  </div>
+
+  <div id="tab-result" style="display:none;">
+    <div class="panel" id="result-panel">
+      <div class="empty">まだルートが計算されていません</div>
+    </div>
+  </div>
+
+  <div id="tab-settings" style="display:none;">
+    <div class="panel">
+      <h3>🔤 文字の大きさ</h3>
+      <div style="text-align:center;font-size:16px;color:var(--violet-deep);font-weight:700;margin-bottom:8px;" id="font-scale-label">100%</div>
+      <input type="range" id="font-scale-slider" min="90" max="150" step="5" value="100" style="width:100%;margin-bottom:12px;">
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="font-scale-btn" data-scale="100" style="flex:1;">標準</button>
+        <button type="button" class="font-scale-btn" data-scale="115" style="flex:1;">大きめ</button>
+        <button type="button" class="font-scale-btn" data-scale="130" style="flex:1;">特大</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>🗺️ 地図アプリの設定</h3>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:10px;">
+        「🗺️ 開く」をタップした時に開く地図アプリを選べます。CleanSiteと同じ設定を引き継ぐこともできます。
+      </div>
+      <label class="map-pref-row"><input type="radio" name="map-pref" value="google">Googleマップ</label>
+      <label class="map-pref-row"><input type="radio" name="map-pref" value="apple">Appleマップ</label>
+      <label class="map-pref-row"><input type="radio" name="map-pref" value="yahoo">Yahoo!地図</label>
+      <label class="map-pref-row"><input type="radio" name="map-pref" value="navitime">NAVITIME</label>
+      <div class="note" id="map-pref-inherit-note" style="margin-top:10px;display:none;"></div>
+    </div>
+  </div>
+
+  <div id="tab-guide" style="display:none;">
+    <div class="panel" style="background:linear-gradient(135deg, var(--violet-deep), var(--violet-mid)); text-align:center; padding:24px 20px;">
+      <div style="font-size:44px; margin-bottom:10px;">🗺️</div>
+      <div style="font-size:18px; font-weight:700; color:#fff; margin-bottom:6px;">CleanRouteの使い方</div>
+      <div style="font-size:12px; color:rgba(255,255,255,0.85); line-height:1.8;">
+        複数の行き先を、効率よく回れる<br>順番で自動的に並べ替えます
+      </div>
+    </div>
+
+    <div class="panel" style="text-align:center; padding:24px 20px; background:var(--violet-mid);">
+      <div style="font-size:44px; margin-bottom:10px;">🤝</div>
+      <div style="font-size:17px; font-weight:700; color:#fff; margin-bottom:6px;">仲間にも使ってもらおう！</div>
+      <div style="font-size:12px; color:rgba(255,255,255,0.85); margin-bottom:18px; line-height:1.8;">
+        このアプリのURLをLINEやメッセージで<br>かんたんに共有できます
+      </div>
+      <button class="big" style="max-width:280px; margin:0 auto;" id="share-app-btn">📲 友達にアプリを教える</button>
+    </div>
+
+    <div class="panel" style="background:var(--violet-mid); padding:20px; text-align:center;">
+      <div style="font-size:36px; margin-bottom:8px;">🏢</div>
+      <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px;">姉妹アプリ CleanSite</div>
+      <div style="font-size:12px; color:rgba(255,255,255,0.9); line-height:1.8; margin-bottom:14px;">
+        現場・お店の情報を管理。<br>CleanRouteの目的地に、CleanSiteの現場をそのまま追加できます。
+      </div>
+      <button class="big" onclick="window.open('https://cleanbillapp.github.io/CleanSite/','_blank')">🏢 CleanSiteを開く</button>
+    </div>
+
+    <div class="panel" style="background:var(--violet-mid); padding:20px; text-align:center;">
+      <div style="font-size:36px; margin-bottom:8px;">🧾</div>
+      <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px;">姉妹アプリ CleanBill</div>
+      <div style="font-size:12px; color:rgba(255,255,255,0.9); line-height:1.8; margin-bottom:14px;">
+        請求書をかんたんに作成。経費もまとめて管理できます。
+      </div>
+      <button class="big" onclick="window.open('https://cleanbillapp.github.io/PLOMPT/','_blank')">🧾 CleanBillを開く</button>
+    </div>
+
+    <div class="panel" style="background:var(--violet-mid); padding:20px; text-align:center;">
+      <div style="font-size:36px; margin-bottom:8px;">📊</div>
+      <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px;">姉妹アプリ CleanTax</div>
+      <div style="font-size:12px; color:rgba(255,255,255,0.9); line-height:1.8; margin-bottom:14px;">
+        確定申告サポートアプリ。売上と経費から複式帳簿を自動作成します。
+      </div>
+      <button class="big" onclick="window.open('https://cleanbillapp.github.io/CleanTax/','_blank')">📊 CleanTaxを開く</button>
+    </div>
+
+    <a href="https://cleanbillapp.github.io/CleanApps/" target="_blank" rel="noopener"
+      style="display:block; text-decoration:none; background:#2A2A2A; border-radius:14px;
+             padding:14px 18px; margin-bottom:14px; text-align:center; font-family:var(--font-main);">
+      <div style="color:rgba(255,255,255,0.7); font-size:11px; margin-bottom:8px;">仕事をもっとシンプルに。</div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:6px; color:#fff; font-size:13px; font-weight:700;">
+        CleanApps を見る <span style="color:#fff;">›</span>
+      </div>
+    </a>
+
+    <div class="panel">
+      <h3>📖 基本の使い方</h3>
+      <div style="font-size:13px; color:var(--sub); line-height:2;">
+        1. 「入力」タブで出発地点を選ぶ(現在地／住所入力)<br>
+        2. CleanSiteの現場から選ぶか、住所を手入力して目的地を追加(2件以上)<br>
+        3. 「ルートを計算する」をタップすると、効率のよい訪問順が自動的に決まります<br>
+        4. 「結果」タブで訪問順を確認し、各地点の「🗺️ 開く」からナビを起動できます<br>
+        5. 訪問し終えた場所はチェックを入れると、次に行く場所がひと目でわかります
+      </div>
+    </div>
+
+    <div class="note" style="margin-bottom:14px;">
+      💡 目的地が多いときや通信状況によっては、実際の道路距離の計算に少し時間がかかったり、直線距離での計算に切り替わることがあります。
+    </div>
+
+    <div class="panel">
+      <h3>📱 ホーム画面への追加をおすすめします</h3>
+      <div style="font-size:13px; color:var(--sub); line-height:1.8;">
+        ブラウザのタブからではなく、ホーム画面に追加したアイコンから起動すると、文字の大きさなどの設定が保たれやすくなります。CleanSite/CleanBill/CleanTaxと同じ手順で追加できます(共有ボタン→「ホーム画面に追加」)。
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="modal-overlay" id="register-modal">
+  <div class="modal-panel">
+    <h3>CleanSiteに登録</h3>
+    <div class="type-grid" id="register-type-grid">
+      <div class="type-chip selected" data-type="site">🏢 現場</div>
+      <div class="type-chip" data-type="spot">📍 スポット</div>
+      <div class="type-chip" data-type="client">🤝 取引先</div>
+    </div>
+    <label>名称</label>
+    <input type="text" id="register-name">
+    <div id="register-cat-row" style="display:none;">
+      <label>スポットの種別</label>
+      <select id="register-cat">
+        <option value="駐車場">🅿️ 駐車場</option>
+        <option value="コンビニ">🏪 コンビニ</option>
+        <option value="飲食店">🍴 飲食店</option>
+        <option value="お気に入り">⭐ お気に入り</option>
+        <option value="その他">📦 その他</option>
+      </select>
+    </div>
+    <div class="modal-addr" id="register-addr"></div>
+    <div class="modal-btn-row">
+      <button class="modal-btn-cancel" id="register-cancel-btn">キャンセル</button>
+      <button class="modal-btn-confirm" id="register-confirm-btn">登録する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = { destinations: [], startMode: 'gps', route: null, visited: [] };
+let siteFilterQuery = '', siteFilterKana = '';
+let spotFilterQuery = '', spotFilterKana = '';
+
+// --- 名称のかな検索(CleanSiteと同じ判定方式) ---
+const KANA_GROUPS = [
+  { label: 'あ', chars: ['あ','い','う','え','お'] },
+  { label: 'か', chars: ['か','き','く','け','こ','が','ぎ','ぐ','げ','ご'] },
+  { label: 'さ', chars: ['さ','し','す','せ','そ','ざ','じ','ず','ぜ','ぞ'] },
+  { label: 'た', chars: ['た','ち','つ','て','と','だ','ぢ','づ','で','ど'] },
+  { label: 'な', chars: ['な','に','ぬ','ね','の'] },
+  { label: 'は', chars: ['は','ひ','ふ','へ','ほ','ば','び','ぶ','べ','ぼ','ぱ','ぴ','ぷ','ぺ','ぽ'] },
+  { label: 'ま', chars: ['ま','み','む','め','も'] },
+  { label: 'や', chars: ['や','ゆ','よ'] },
+  { label: 'ら', chars: ['ら','り','る','れ','ろ'] },
+  { label: 'わ', chars: ['わ','を','ん'] },
+];
+function kataToHira(str) {
+  return str.replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+}
+function matchesKana(name, label) {
+  if (!label) return true;
+  if (label === 'ABC') return /^[A-Za-z]/.test(name.trim());
+  const group = KANA_GROUPS.find(g => g.label === label);
+  if (!group) return true;
+  const first = kataToHira(name.trim()).charAt(0);
+  return group.chars.includes(first);
+}
+function kanaIndexHTML(idPrefix, activeLabel) {
+  return `<div class="kana-index" id="${idPrefix}-kana-index">
+    <button type="button" class="kana-btn ${!activeLabel ? 'active' : ''}" data-kana="">全て</button>
+    ${KANA_GROUPS.map(g => `<button type="button" class="kana-btn ${activeLabel === g.label ? 'active' : ''}" data-kana="${g.label}">${g.label}</button>`).join('')}
+    <button type="button" class="kana-btn ${activeLabel === 'ABC' ? 'active' : ''}" data-kana="ABC">ABC</button>
+  </div>`;
+}
+
+// --- CleanSiteの現場データ連携 ---
+// 本来はCleanSiteと同じGitHub Pagesアカウント配下(同一オリジン)に設置すると、
+// ブラウザのlocalStorageが共有されるため、CleanSite側が保存している 'cs_sites' を直接読み取れる。
+// ただしiPhoneでは、別々にホーム画面へ追加したアプリ同士は共有されないことがあるため、
+// その場合はCleanSiteから書き出したファイルの取り込みキャッシュ('cr_imported_sites'/'cr_imported_spots')を使う。
+function loadCleanSiteSites() {
+  // GitHub同期やファイル読み込みで取得した内容を優先(意図的な最新データのため)。
+  // なければCleanSite本体と共有できている場合の値を使う。
+  try {
+    const imported = JSON.parse(localStorage.getItem('cr_imported_sites') || '[]');
+    if (imported.length) return imported;
+  } catch (e) {}
+  try {
+    return JSON.parse(localStorage.getItem('cs_sites') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function renderCleanSitePanel() {
+  const body = document.getElementById('cleansite-panel-body');
+  const sites = loadCleanSiteSites();
+
+  if (!sites.length) {
+    body.innerHTML = `
+      <div class="note">CleanSiteの現場データが見つかりませんでした。「🔄 CleanSiteと同期」または「📂 CleanSiteのファイルを読み込む」で取り込むと、ここに一覧が表示されます。</div>
+    `;
+    return;
+  }
+
+  const sorted = [...sites]
+    .filter(s => s.name.includes(siteFilterQuery) && matchesKana(s.name, siteFilterKana))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  body.innerHTML = `
+    <input type="text" class="cs-search-input" id="cleansite-search" placeholder="名称で検索" value="${siteFilterQuery.replace(/"/g, '&quot;')}">
+    ${kanaIndexHTML('cleansite', siteFilterKana)}
+    <div class="site-checklist" id="cleansite-checklist">
+      ${sorted.length ? sorted.map(s => `
+        <label>
+          <input type="checkbox" value="${s.id}">
+          <span>
+            ${s.name}
+            ${s.address ? `<span class="s-addr">📍 ${s.address}</span>` : `<span class="s-noaddr">住所未登録のため追加できません</span>`}
+          </span>
+        </label>
+      `).join('') : '<div class="s-noaddr" style="padding:10px 2px;">該当する現場がありません</div>'}
+    </div>
+    <button class="primary" id="add-cleansite-btn" style="margin-top:10px;width:100%;">選択した現場を目的地に追加</button>
+  `;
+  document.getElementById('cleansite-search').addEventListener('input', (e) => {
+    siteFilterQuery = e.target.value;
+    renderCleanSitePanel();
+  });
+  document.querySelectorAll('#cleansite-kana-index .kana-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      siteFilterKana = btn.dataset.kana;
+      renderCleanSitePanel();
+    });
+  });
+  document.getElementById('add-cleansite-btn').addEventListener('click', () => {
+    const checked = Array.from(document.querySelectorAll('#cleansite-checklist input:checked')).map(cb => cb.value);
+    const targets = sites.filter(s => checked.includes(String(s.id)));
+    let skipped = 0;
+    targets.forEach(s => {
+      if (!s.address) { skipped++; return; }
+      state.destinations.push({ label: s.name, address: s.address, fromCleanSite: true, fixedRank: null, fixedAbsolute: false });
+    });
+    document.querySelectorAll('#cleansite-checklist input:checked').forEach(cb => cb.checked = false);
+    renderDestList();
+    if (skipped) alert(`住所が未登録の現場が${skipped}件あり、追加をスキップしました。`);
+  });
+}
+
+// --- CleanSiteのスポットデータ連携 ---
+function loadCleanSiteSpots() {
+  try {
+    const imported = JSON.parse(localStorage.getItem('cr_imported_spots') || '[]');
+    if (imported.length) return imported;
+  } catch (e) {}
+  try {
+    return JSON.parse(localStorage.getItem('cs_spots') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+const SPOT_ICONS = { '駐車場': '🅿️', 'コンビニ': '🏪', '飲食店': '🍴', 'お気に入り': '⭐', 'その他': '📦' };
+
+function renderCleanSiteSpotPanel() {
+  const body = document.getElementById('cleansite-spot-panel-body');
+  const spots = loadCleanSiteSpots();
+
+  if (!spots.length) {
+    body.innerHTML = `
+      <div class="note">CleanSiteのスポットデータが見つかりませんでした。「🔄 CleanSiteと同期」または「📂 CleanSiteのファイルを読み込む」で取り込むと、ここに一覧が表示されます。</div>
+    `;
+    return;
+  }
+
+  const sorted = [...spots]
+    .filter(s => s.name.includes(spotFilterQuery) && matchesKana(s.name, spotFilterKana))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  body.innerHTML = `
+    <input type="text" class="cs-search-input" id="cleansite-spot-search" placeholder="名称で検索" value="${spotFilterQuery.replace(/"/g, '&quot;')}">
+    ${kanaIndexHTML('cleansite-spot', spotFilterKana)}
+    <div class="site-checklist" id="cleansite-spot-checklist">
+      ${sorted.length ? sorted.map(s => `
+        <label>
+          <input type="checkbox" value="${s.id}">
+          <span>
+            ${SPOT_ICONS[s.category] || '📦'} ${s.name}
+            ${s.address ? `<span class="s-addr">📍 ${s.address}</span>` : `<span class="s-noaddr">住所未登録のため追加できません</span>`}
+          </span>
+        </label>
+      `).join('') : '<div class="s-noaddr" style="padding:10px 2px;">該当するスポットがありません</div>'}
+    </div>
+    <button class="primary" id="add-cleansite-spot-btn" style="margin-top:10px;width:100%;">選択したスポットを目的地に追加</button>
+  `;
+  document.getElementById('cleansite-spot-search').addEventListener('input', (e) => {
+    spotFilterQuery = e.target.value;
+    renderCleanSiteSpotPanel();
+  });
+  document.querySelectorAll('#cleansite-spot-kana-index .kana-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      spotFilterKana = btn.dataset.kana;
+      renderCleanSiteSpotPanel();
+    });
+  });
+  document.getElementById('add-cleansite-spot-btn').addEventListener('click', () => {
+    const checked = Array.from(document.querySelectorAll('#cleansite-spot-checklist input:checked')).map(cb => cb.value);
+    const targets = spots.filter(s => checked.includes(String(s.id)));
+    let skipped = 0;
+    targets.forEach(s => {
+      if (!s.address) { skipped++; return; }
+      state.destinations.push({ label: `${SPOT_ICONS[s.category] || '📦'} ${s.name}`, address: s.address, fromCleanSite: true, fixedRank: null, fixedAbsolute: false });
+    });
+    document.querySelectorAll('#cleansite-spot-checklist input:checked').forEach(cb => cb.checked = false);
+    renderDestList();
+    if (skipped) alert(`住所が未登録のスポットが${skipped}件あり、追加をスキップしました。`);
+  });
+}
+
+function switchTab(name) {
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.getElementById('tab-input').style.display = name === 'input' ? '' : 'none';
+  document.getElementById('tab-result').style.display = name === 'result' ? '' : 'none';
+  document.getElementById('tab-settings').style.display = name === 'settings' ? '' : 'none';
+  document.getElementById('tab-guide').style.display = name === 'guide' ? '' : 'none';
+}
+document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+// --- 友達に教える ---
+async function shareApp() {
+  const appUrl = 'https://cleanbillapp.github.io/CleanRoute/';
+  const appName = 'CleanRoute(効率ルート計算アプリ)';
+  const message = `【${appName}】\n複数の行き先を入力するだけで、効率よく回れる順番を自動で計算してくれるアプリです！CleanSiteの現場データとも連携できます。\n無料で使えます👇\n${appUrl}\n\n🏢 姉妹アプリ CleanSite（現場情報管理）\nhttps://cleanbillapp.github.io/CleanSite/\n🧾 CleanBill（請求書作成）\nhttps://cleanbillapp.github.io/PLOMPT/\n📊 CleanTax（確定申告サポート）\nhttps://cleanbillapp.github.io/CleanTax/\nも無料です！`;
+
+  if (navigator.share) {
+    try { await navigator.share({ title: appName, text: message, url: appUrl }); return; }
+    catch (e) { if (e.name !== 'AbortError') copyToClipboard(message); return; }
+  }
+  copyToClipboard(message);
+}
+function copyToClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => alert('URLをコピーしました。LINEなどに貼り付けてください'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('URLをコピーしました。LINEなどに貼り付けてください');
+  }
+}
+document.getElementById('share-app-btn').addEventListener('click', shareApp);
+
+// --- 文字の大きさ(CleanBill/CleanTax/CleanSiteと同じ仕組み) ---
+function getFontScale() {
+  try { return parseFloat(localStorage.getItem('cr_font_scale') || '1'); } catch (e) { return 1; }
+}
+function setFontScale(scale) {
+  scale = Math.min(1.5, Math.max(0.9, Math.round(scale * 20) / 20));
+  try { localStorage.setItem('cr_font_scale', scale); } catch (e) {}
+  document.documentElement.style.setProperty('--font-scale', scale);
+  updateFontScaleUI(scale);
+}
+function updateFontScaleUI(scale) {
+  const pct = Math.round(scale * 100);
+  document.getElementById('font-scale-slider').value = pct;
+  document.getElementById('font-scale-label').textContent = pct + '%';
+  document.querySelectorAll('.font-scale-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.scale, 10) === pct);
+  });
+}
+document.getElementById('font-scale-slider').addEventListener('input', e => {
+  document.documentElement.style.setProperty('--font-scale', e.target.value / 100);
+  document.getElementById('font-scale-label').textContent = e.target.value + '%';
+});
+document.getElementById('font-scale-slider').addEventListener('change', e => setFontScale(e.target.value / 100));
+document.querySelectorAll('.font-scale-btn').forEach(b => {
+  b.addEventListener('click', () => setFontScale(parseInt(b.dataset.scale, 10) / 100));
+});
+(function initFontScale() {
+  const scale = getFontScale();
+  document.documentElement.style.setProperty('--font-scale', scale);
+  updateFontScaleUI(scale);
+})();
+
+document.getElementById('seg-gps').addEventListener('click', () => {
+  state.startMode = 'gps';
+  document.getElementById('seg-gps').classList.add('on');
+  document.getElementById('seg-manual').classList.remove('on');
+  document.getElementById('start-address').style.display = 'none';
+  document.getElementById('gps-status').style.display = '';
+});
+document.getElementById('seg-manual').addEventListener('click', () => {
+  state.startMode = 'manual';
+  document.getElementById('seg-manual').classList.add('on');
+  document.getElementById('seg-gps').classList.remove('on');
+  document.getElementById('start-address').style.display = '';
+  document.getElementById('gps-status').style.display = 'none';
+});
+
+function renderDestList() {
+  const ul = document.getElementById('dest-list');
+  ul.innerHTML = '';
+  const n = state.destinations.length;
+  state.destinations.forEach((d, i) => {
+    const li = document.createElement('li');
+    const rankOptions = Array.from({ length: n }, (_, k) => k + 1)
+      .map(r => `<option value="${r}" ${d.fixedRank === r ? 'selected' : ''}>${r}番目</option>`).join('');
+    const showAbsolute = typeof d.fixedRank === 'number' && d.fixedRank >= 2;
+    li.innerHTML = `
+      <div class="dest-row-main">
+        <span>${d.label}</span>
+        <div class="dest-actions">
+          ${!d.fromCleanSite ? `<button class="to-cleansite-btn" data-i="${i}">🏢 CleanSiteに登録</button>` : ''}
+          <button class="del-btn" data-i="${i}">✕</button>
+        </div>
+      </div>
+      <div class="dest-fix-row">
+        <label>順番を固定:</label>
+        <select class="fix-rank-select ${d.fixedRank ? 'is-fixed' : ''}" data-i="${i}">
+          <option value="">自動</option>
+          ${rankOptions}
+          <option value="last" ${d.fixedRank === 'last' ? 'selected' : ''}>最後</option>
+        </select>
+        ${showAbsolute ? `
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;">
+          <input type="checkbox" class="fix-absolute-check" data-i="${i}" ${d.fixedAbsolute ? 'checked' : ''}>絶対にこの順番
+        </label>` : ''}
+      </div>`;
+    ul.appendChild(li);
+  });
+  document.getElementById('dest-count').textContent = state.destinations.length;
+  document.getElementById('calc-btn').disabled = state.destinations.length < 2;
+  ul.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.destinations.splice(Number(btn.dataset.i), 1);
+      renderDestList();
+    });
+  });
+  ul.querySelectorAll('.fix-rank-select').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const i = Number(sel.dataset.i);
+      if (sel.value === '') {
+        state.destinations[i].fixedRank = null;
+        state.destinations[i].fixedAbsolute = false;
+      } else if (sel.value === 'last') {
+        // 「最後」は1件しか指定できないため、他の項目の指定は解除する
+        state.destinations.forEach(d => { if (d.fixedRank === 'last') d.fixedRank = null; });
+        state.destinations[i].fixedRank = 'last';
+        state.destinations[i].fixedAbsolute = false;
+      } else {
+        state.destinations[i].fixedRank = parseInt(sel.value, 10);
+      }
+      renderDestList();
+    });
+  });
+  ul.querySelectorAll('.fix-absolute-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      state.destinations[Number(cb.dataset.i)].fixedAbsolute = cb.checked;
+    });
+  });
+  ul.querySelectorAll('.to-cleansite-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dest = state.destinations[Number(btn.dataset.i)];
+      openRegisterModal(dest);
+    });
+  });
+}
+
+// --- CleanSiteへ現場/スポット/取引先として書き戻す ---
+let registerContext = null;
+let registerType = 'site';
+
+function openRegisterModal(dest) {
+  registerContext = dest;
+  registerType = 'site';
+  document.querySelectorAll('#register-type-grid .type-chip').forEach(c => c.classList.toggle('selected', c.dataset.type === 'site'));
+  document.getElementById('register-cat-row').style.display = 'none';
+  document.getElementById('register-name').value = dest.label;
+  document.getElementById('register-addr').textContent = '📍 ' + dest.address;
+  document.getElementById('register-modal').classList.add('show');
+}
+function closeRegisterModal() {
+  document.getElementById('register-modal').classList.remove('show');
+  registerContext = null;
+}
+document.querySelectorAll('#register-type-grid .type-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    registerType = chip.dataset.type;
+    document.querySelectorAll('#register-type-grid .type-chip').forEach(c => c.classList.toggle('selected', c === chip));
+    document.getElementById('register-cat-row').style.display = registerType === 'spot' ? 'block' : 'none';
+  });
+});
+document.getElementById('register-cancel-btn').addEventListener('click', closeRegisterModal);
+document.getElementById('register-confirm-btn').addEventListener('click', () => {
+  if (!registerContext) return;
+  const name = document.getElementById('register-name').value.trim();
+  if (!name) { alert('名称を入力してください'); return; }
+  const dest = registerContext;
+  const storageKey = registerType === 'site' ? 'cs_sites' : registerType === 'spot' ? 'cs_spots' : 'cs_clients';
+  const typeLabel = registerType === 'site' ? '現場' : registerType === 'spot' ? 'スポット' : '取引先';
+
+  let list;
+  try {
+    list = JSON.parse(localStorage.getItem(storageKey) || '[]');
+  } catch (e) {
+    alert('CleanSiteのデータを読み込めませんでした。CleanRouteをCleanSiteと同じGitHubアカウント配下(同一オリジン)に設置してから、実機でお試しください。');
+    return;
+  }
+
+  const normalize = s => (s || '').replace(/\s/g, '');
+  const duplicate = list.find(x => x.address && normalize(x.address) === normalize(dest.address));
+  if (duplicate) {
+    const proceed = confirm(`すでに同じ住所が「${duplicate.name}」(${typeLabel})として登録されています。\n住所: ${duplicate.address}\n\nそれでも新しく登録しますか？`);
+    if (!proceed) return;
+  }
+
+  let newItem;
+  if (registerType === 'site') {
+    newItem = { id: Date.now(), name, address: dest.address, note: '', note2: '', clientIds: [], contactIds: [] };
+  } else if (registerType === 'spot') {
+    const category = document.getElementById('register-cat').value;
+    newItem = { id: Date.now(), name, address: dest.address, hours: '', price: '', showHours: true, showPrice: true, url: '', category, siteIds: [] };
+  } else {
+    newItem = { id: Date.now(), name, address: dest.address, phone1: '', phone2: '', email: '', website: '', note: '', note2: '', contacts: [] };
+  }
+  list.push(newItem);
+
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(list));
+  } catch (e) {
+    alert('CleanSiteへの保存に失敗しました。CleanRouteをCleanSiteと同じGitHubアカウント配下(同一オリジン)に設置してから、実機でお試しください。');
+    return;
+  }
+
+  dest.fromCleanSite = true; // 登録済みなので、このリスト上ではもう登録ボタンを出さない
+  closeRegisterModal();
+  renderDestList();
+  renderCleanSitePanel();
+  renderCleanSiteSpotPanel();
+  alert(`${typeLabel === '現場' ? '🏢' : typeLabel === 'スポット' ? '📍' : '🤝'}「${name}」をCleanSiteに${typeLabel}として登録しました`);
+});
+
+document.getElementById('add-dest-btn').addEventListener('click', () => {
+  const input = document.getElementById('new-dest');
+  const val = input.value.trim();
+  if (!val) return;
+  state.destinations.push({ label: val, address: val, fromCleanSite: false, fixedRank: null, fixedAbsolute: false });
+  input.value = '';
+  renderDestList();
+});
+document.getElementById('new-dest').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('add-dest-btn').click();
+});
+
+// --- geocoding (Nominatim) ---
+// --- geocoding: まず国土地理院(GSI)の住所検索API(日本の住所に特化、無料・キー不要)を試し、
+// ダメだった場合はNominatim(海外住所やGSIで見つからない場合の予備)を試す。
+// それでも見つからない場合は、番地などを少しずつ削って再検索する(建物名・部屋番号などで失敗するのを防ぐため)
+function normalizeAddressDigits(address) {
+  return address.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)); // 全角数字→半角
+}
+async function geocodeGSI(address) {
+  const url = `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(address)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!Array.isArray(data) || !data.length) return null;
+  const [lng, lat] = data[0].geometry.coordinates; // GSIはGeoJSON形式のため[経度,緯度]の順
+  return { lat, lng };
+}
+async function geocodeNominatim(address) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'ja' } });
+  const data = await res.json();
+  if (!data.length) return null;
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+}
+async function geocodeOnce(address) {
+  try {
+    const gsiResult = await geocodeGSI(address);
+    if (gsiResult) return gsiResult;
+  } catch (e) { /* GSIがダメならNominatimを試す */ }
+  return await geocodeNominatim(address);
+}
+// 住所の末尾を少しずつ削って再検索するための候補リストを作る
+// 例: 「東京都渋谷区渋谷2-1-1 〇〇マンション101」→「東京都渋谷区渋谷2-1-1」→「東京都渋谷区渋谷2-1」→「東京都渋谷区渋谷2」
+function buildAddressFallbacks(address) {
+  const candidates = [address];
+  let current = address.replace(/[　\s]+/g, ' ').trim();
+  // 半角スペース区切りで末尾の建物名・部屋番号らしき部分を削る
+  const spaceParts = current.split(' ');
+  if (spaceParts.length > 1) candidates.push(spaceParts.slice(0, -1).join(' '));
+  // 番地のハイフンを1つずつ削る
+  let trimmed = spaceParts[0];
+  while (trimmed.includes('-') || trimmed.includes('－')) {
+    trimmed = trimmed.replace(/[-－][^-－]*$/, '');
+    if (trimmed) candidates.push(trimmed);
+  }
+  return [...new Set(candidates)];
+}
+async function geocodeReal(address) {
+  const normalized = normalizeAddressDigits(address);
+  const candidates = buildAddressFallbacks(normalized);
+  for (const candidate of candidates) {
+    const result = await geocodeOnce(candidate);
+    if (result) return { name: address, address, ...result };
+  }
+  throw new Error(`「${address}」の場所が見つかりませんでした`);
+}
+
+function getCurrentLocationReal() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('この端末は位置情報に対応していません'));
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ name: '現在地', lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => reject(new Error('現在地を取得できませんでした(位置情報の許可を確認してください)'))
+    );
+  });
+}
+
+function geocode(address) {
+  return geocodeReal(address);
+}
+function getCurrentLocation() {
+  return getCurrentLocationReal();
+}
+
+function haversine(a, b) {
+  const R = 6371;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+  const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
+}
+
+function nearestNeighborOrder(n, distFn) {
+  // n: 目的地の数(インデックス1〜n)。出発地は0固定
+  const remaining = new Set(Array.from({ length: n }, (_, i) => i + 1));
+  const order = [];
+  let current = 0;
+  while (remaining.size) {
+    let best = -1, bd = Infinity;
+    remaining.forEach(idx => {
+      const d = distFn(current, idx);
+      if (d < bd) { bd = d; best = idx; }
+    });
+    order.push(best);
+    remaining.delete(best);
+    current = best;
+  }
+  return order;
+}
+
+function routeLengthIdx(order, distFn) {
+  let total = 0, prev = 0;
+  order.forEach(idx => { total += distFn(prev, idx); prev = idx; });
+  return total;
+}
+
+function twoOptIdx(order, distFn) {
+  let improved = true;
+  let best = order;
+  while (improved) {
+    improved = false;
+    for (let i = 0; i < best.length - 1; i++) {
+      for (let j = i + 1; j < best.length; j++) {
+        const candidate = best.slice(0, i).concat(best.slice(i, j + 1).reverse(), best.slice(j + 1));
+        if (routeLengthIdx(candidate, distFn) < routeLengthIdx(best, distFn) - 1e-6) {
+          best = candidate;
+          improved = true;
+        }
+      }
+    }
+  }
+  return best;
+}
+
+// --- 「順番の固定」に対応したルート構築 ---
+// destInfos[i] = { rank: null|number|'last', absolute: boolean } (iは目的地の0始まりインデックス)
+// - rank=1 は常に出発直後の1番目として扱う(絶対固定)
+// - rank>=2 は「絶対にこの順番」がONの時だけ、その手前に他の場所が入らないようにする
+// - rank='last' は必ず最後の訪問先になる(1件のみ有効)
+// - 固定していない場所はcheapest insertion法で、全体の移動距離が最も短くなる位置に自動で挿し込む
+function buildOrderWithFixed(n, distFn, destInfos) {
+  const allIdx = Array.from({ length: n }, (_, i) => i + 1); // allPoints上のインデックス(0=出発地)
+  let lastIdx = null;
+  const numberedFixed = [];
+  const freeSet = new Set(allIdx);
+
+  allIdx.forEach(idx => {
+    const info = destInfos[idx - 1];
+    if (!info || info.rank == null) return;
+    if (info.rank === 'last') {
+      if (lastIdx == null) { lastIdx = idx; freeSet.delete(idx); }
+    } else {
+      numberedFixed.push({ idx, rank: info.rank, absolute: !!info.absolute });
+      freeSet.delete(idx);
+    }
+  });
+
+  if (!numberedFixed.length && lastIdx == null) {
+    let order = nearestNeighborOrder(n, distFn);
+    return twoOptIdx(order, distFn);
+  }
+
+  numberedFixed.sort((a, b) => a.rank - b.rank); // 固定順位の昇順(同順位は元の並び順を維持)
+
+  let skeleton = [0, ...numberedFixed.map(f => f.idx)]; // 先頭は出発地(0)
+  const blockedGaps = new Set();
+  numberedFixed.forEach((f, k) => {
+    if (k === 0 && f.rank === 1) blockedGaps.add(1); // 「1番目」は常に出発直後として死守
+    if (f.absolute) blockedGaps.add(k + 1); // 「絶対にこの順番」の手前も死守
+  });
+
+  const free = allIdx.filter(idx => freeSet.has(idx));
+
+  while (free.length) {
+    let bestCost = Infinity, bestFreePos = -1, bestInsertPos = -1;
+    for (let fi = 0; fi < free.length; fi++) {
+      const p = free[fi];
+      for (let pos = 1; pos <= skeleton.length; pos++) {
+        if (blockedGaps.has(pos)) continue;
+        const a = skeleton[pos - 1];
+        const cost = (pos < skeleton.length)
+          ? distFn(a, p) + distFn(p, skeleton[pos]) - distFn(a, skeleton[pos])
+          : distFn(a, p); // 末尾に追加する場合
+        if (cost < bestCost) { bestCost = cost; bestFreePos = fi; bestInsertPos = pos; }
+      }
+    }
+    skeleton.splice(bestInsertPos, 0, free[bestFreePos]);
+    free.splice(bestFreePos, 1);
+    // 挿入によって後ろにずれた固定地点ぶん、死守すべきギャップ番号も繰り下げる
+    const shifted = new Set();
+    blockedGaps.forEach(g => shifted.add(g >= bestInsertPos ? g + 1 : g));
+    blockedGaps.clear();
+    shifted.forEach(g => blockedGaps.add(g));
+  }
+
+  const result = skeleton.slice(1); // 先頭の出発地(0)を除く
+  if (lastIdx != null) result.push(lastIdx);
+  return result;
+}
+
+// --- OSRM(無料・APIキー不要の道路距離計算サービス)で実際の道路距離(km)と所要時間(分)の行列を取得 ---
+async function fetchRoadDistanceMatrix(points) {
+  const coords = points.map(p => `${p.lng},${p.lat}`).join(';');
+  const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance,duration`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.code !== 'Ok' || !data.distances) throw new Error('道路距離を取得できませんでした');
+  return {
+    distance: data.distances.map(row => row.map(m => m / 1000)), // メートル→km
+    duration: data.durations ? data.durations.map(row => row.map(s => s / 60)) : null, // 秒→分
+  };
+}
+
+// 直線距離しか使えない場合の所要時間の目安(市街地の平均時速30kmと仮定)
+function estimateDurationMin(km) {
+  return (km / 30) * 60;
+}
+
+document.getElementById('calc-btn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('calc-status');
+  const btn = document.getElementById('calc-btn');
+  btn.disabled = true;
+  try {
+    statusEl.textContent = '出発地点を確認中...';
+    const start = state.startMode === 'gps'
+      ? await getCurrentLocation()
+      : await geocode(document.getElementById('start-address').value.trim());
+
+    statusEl.textContent = `目的地を調べています(0/${state.destinations.length})...`;
+    const points = [];
+    for (let i = 0; i < state.destinations.length; i++) {
+      const dest = state.destinations[i];
+      const p = await geocode(dest.address);
+      p.name = dest.label; // 表示名はCleanSiteの現場名または入力した文字列を使う
+      points.push(p);
+      statusEl.textContent = `目的地を調べています(${i+1}/${state.destinations.length})...`;
+      await new Promise(r => setTimeout(r, 300)); // Nominatim利用規約に配慮したウェイト
+    }
+
+    const allPoints = [start, ...points];
+    let matrix = null;
+    let durMatrix = null;
+    let usedRoad = false;
+    let roadWarning = '';
+
+    statusEl.textContent = '実際の道路距離を取得中...';
+    try {
+      const res = await fetchRoadDistanceMatrix(allPoints);
+      matrix = res.distance;
+      durMatrix = res.duration;
+      usedRoad = true;
+    } catch (e) {
+      roadWarning = '道路距離が取得できなかったため、直線距離で計算しました。';
+    }
+
+    const distFn = (a, b) => matrix ? matrix[a][b] : haversine(allPoints[a], allPoints[b]);
+    const durFn = (a, b) => durMatrix ? durMatrix[a][b] : estimateDurationMin(distFn(a, b));
+
+    statusEl.textContent = '最適な順番を計算中...';
+    const destInfos = state.destinations.map(d => ({ rank: d.fixedRank || null, absolute: !!d.fixedAbsolute }));
+    let orderIdx = buildOrderWithFixed(points.length, distFn, destInfos);
+
+    const stayMin = parseInt(document.getElementById('stay-minutes').value, 10) || 0;
+    const departureStr = document.getElementById('departure-time').value;
+    let clock = null;
+    if (departureStr) {
+      const [h, m] = departureStr.split(':').map(Number);
+      clock = new Date();
+      clock.setHours(h, m, 0, 0);
+    }
+
+    const legs = [];
+    let prevIdx = 0;
+    orderIdx.forEach(idx => {
+      const durationMin = durFn(prevIdx, idx);
+      if (clock) clock = new Date(clock.getTime() + durationMin * 60000);
+      const arrival = clock ? `${String(clock.getHours()).padStart(2,'0')}:${String(clock.getMinutes()).padStart(2,'0')}` : null;
+      if (clock) clock = new Date(clock.getTime() + stayMin * 60000); // 次の区間の計算のため、滞在時間ぶん進めておく
+      legs.push({
+        point: allPoints[idx],
+        distKm: distFn(prevIdx, idx),
+        durationMin,
+        arrival,
+        fixed: destInfos[idx - 1].rank != null,
+      });
+      prevIdx = idx;
+    });
+
+    state.route = { start, legs, usedRoad };
+    state.visited = legs.map(() => false);
+    renderResult();
+    statusEl.textContent = roadWarning;
+    switchTab('result');
+  } catch (e) {
+    statusEl.textContent = '⚠️ ' + e.message;
+  } finally {
+    btn.disabled = state.destinations.length < 2;
+  }
+});
+
+function getCleanSiteMapPref() {
+  try { return localStorage.getItem('cs_map_pref'); } catch (e) { return null; }
+}
+function getMapPref() {
+  try {
+    const own = localStorage.getItem('cr_map_pref');
+    if (own) return own;
+  } catch (e) {}
+  return getCleanSiteMapPref() || 'google';
+}
+function setMapPref(value) {
+  try { localStorage.setItem('cr_map_pref', value); } catch (e) {}
+  updateMapPrefUI();
+}
+function updateMapPrefUI() {
+  const pref = getMapPref();
+  document.querySelectorAll('input[name="map-pref"]').forEach(r => { r.checked = (r.value === pref); });
+  let hasOwn = false;
+  try { hasOwn = !!localStorage.getItem('cr_map_pref'); } catch (e) {}
+  const csPref = getCleanSiteMapPref();
+  const noteEl = document.getElementById('map-pref-inherit-note');
+  if (!hasOwn && csPref) {
+    noteEl.style.display = 'block';
+    noteEl.textContent = `現在はCleanSiteの設定(${mapPrefLabel(csPref)})を引き継いでいます。上で選び直すとCleanRoute側だけ変更されます。`;
+  } else {
+    noteEl.style.display = 'none';
+  }
+}
+function mapPrefLabel(pref) {
+  return { google: 'Googleマップ', apple: 'Appleマップ', yahoo: 'Yahoo!地図', navitime: 'NAVITIME' }[pref] || 'Googleマップ';
+}
+document.querySelectorAll('input[name="map-pref"]').forEach(r => {
+  r.addEventListener('change', () => setMapPref(r.value));
+});
+updateMapPrefUI();
+
+function mapsUrl(place) {
+  const q = place.address || (place.lat != null && place.lng != null ? `${place.lat},${place.lng}` : place.name);
+  const enc = encodeURIComponent(q);
+  const pref = getMapPref();
+  if (pref === 'apple') return `https://maps.apple.com/?q=${enc}`;
+  if (pref === 'yahoo') return `https://map.yahoo.co.jp/search?p=${enc}`;
+  if (pref === 'navitime') return `https://www.navitime.co.jp/maps/search?word=${enc}`;
+  return `https://www.google.com/maps/search/?api=1&query=${enc}`;
+}
+
+function renderResult() {
+  const panel = document.getElementById('result-panel');
+  if (!state.route) {
+    panel.innerHTML = '<div class="empty">まだルートが計算されていません</div>';
+    return;
+  }
+  const { start, legs, usedRoad } = state.route;
+  const nextIndex = state.visited.findIndex(v => !v); // 最初の未訪問地点
+
+  let html = `<div class="result-item"><div class="badge start">出発</div><div class="result-text">${start.name}</div><a class="map-link" href="${mapsUrl(start)}" target="_blank">🗺️ 開く</a></div>`;
+  legs.forEach((leg, i) => {
+    const isVisited = state.visited[i];
+    const isNext = i === nextIndex;
+    html += `<div class="result-item ${isVisited ? 'visited' : ''} ${isNext ? 'next' : ''}">
+      <input type="checkbox" class="visit-check" data-i="${i}" ${isVisited ? 'checked' : ''}>
+      <div class="badge ${isNext ? 'start' : ''}">${i+1}</div>
+      <div class="result-text">
+        ${isNext ? '<span class="next-flag">→ 次はここ</span>' : ''}
+        ${leg.fixed ? '<span class="next-flag" style="color:var(--violet-deep);">📌 固定</span>' : ''}
+        ${leg.point.name}
+        <div class="dist">
+          前の地点から約${leg.distKm.toFixed(1)}km${usedRoad ? '(道路距離)' : '(直線距離)'}
+          ・移動時間約${Math.round(leg.durationMin)}分
+          ${leg.arrival ? `・到着予定 ${leg.arrival}頃` : ''}
+        </div>
+      </div>
+      <a class="map-link" href="${mapsUrl(leg.point)}" target="_blank">🗺️ 開く</a>
+    </div>`;
+  });
+  const total = legs.reduce((acc, leg) => acc + leg.distKm, 0);
+  const totalMin = legs.reduce((acc, leg) => acc + leg.durationMin, 0);
+  html += `<div class="note" style="margin-top:12px;">合計距離: 約${total.toFixed(1)}km(${usedRoad ? '実際の道路距離ベース' : '直線距離の目安'})　/　合計移動時間: 約${Math.round(totalMin)}分</div>`;
+  panel.innerHTML = html;
+
+  panel.querySelectorAll('.visit-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      state.visited[Number(cb.dataset.i)] = cb.checked;
+      renderResult();
+    });
+  });
+}
+
+renderCleanSitePanel();
+renderCleanSiteSpotPanel();
+renderDestList();
+
+// --- CleanSiteから書き出したファイルの読み込み ---
+// --- CleanSiteがGitHubに同期したファイルを直接取得 ---
+async function fetchCleanSiteExportFile() {
+  const url = `https://cleanbillapp.github.io/CleanSite/export.json?t=${Date.now()}`; // キャッシュ回避
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('ファイルが見つかりませんでした(まだCleanSite側で同期されていないか、公開に時間がかかっている可能性があります)');
+  const data = await res.json();
+  if (data.type !== 'cleansite_export') throw new Error('想定した形式のファイルではありませんでした');
+  return data;
+}
+document.getElementById('fetch-github-sync-btn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('github-sync-status');
+  statusEl.textContent = '取得中...';
+  try {
+    const data = await fetchCleanSiteExportFile();
+    const sites = Array.isArray(data.sites) ? data.sites : [];
+    const spots = Array.isArray(data.spots) ? data.spots : [];
+    localStorage.setItem('cr_imported_sites', JSON.stringify(sites));
+    localStorage.setItem('cr_imported_spots', JSON.stringify(spots));
+    statusEl.textContent = `✅ 現場${sites.length}件・スポット${spots.length}件を取得しました(${data.exportedAt ? new Date(data.exportedAt).toLocaleString('ja-JP') : ''}時点)`;
+    renderCleanSitePanel();
+    renderCleanSiteSpotPanel();
+  } catch (e) {
+    statusEl.textContent = '⚠️ ' + e.message;
+  }
+});
+
+document.getElementById('import-file-input').addEventListener('change', (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('import-status');
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.type !== 'cleansite_export') throw new Error('CleanSiteから書き出したファイルではないようです');
+      const sites = Array.isArray(data.sites) ? data.sites : [];
+      const spots = Array.isArray(data.spots) ? data.spots : [];
+      localStorage.setItem('cr_imported_sites', JSON.stringify(sites));
+      localStorage.setItem('cr_imported_spots', JSON.stringify(spots));
+      statusEl.textContent = `✅ 現場${sites.length}件・スポット${spots.length}件を取り込みました`;
+      renderCleanSitePanel();
+      renderCleanSiteSpotPanel();
+    } catch (err) {
+      statusEl.textContent = '⚠️ ファイルを読み込めませんでした。CleanSiteで書き出したファイルを選んでください。';
+    }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+});
+
+// --- CleanSiteの「🔗 教える」共有テキストから取り込む ---
+// ホーム画面に別々に追加したアプリ同士はiOSの仕様上データが共有されないことがあるため、
+// CleanSite側の共有機能(テキスト)を経由して手動で連携するための代替手段
+function parseCleanSiteShareText(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return null;
+  const addrLine = lines.find(l => l.startsWith('📍'));
+  if (!addrLine) return null;
+  const address = addrLine.replace(/^📍\s*/, '').trim();
+  if (!address) return null;
+  const nameLine = lines[0];
+  const name = nameLine.replace(/^\S+\s*/, '').trim() || nameLine;
+  return { name, address };
+}
+document.getElementById('paste-import-btn').addEventListener('click', () => {
+  const raw = document.getElementById('paste-import-text').value.trim();
+  if (!raw) { alert('CleanSiteの「🔗 教える」で共有した内容を貼り付けてください'); return; }
+  const parsed = parseCleanSiteShareText(raw);
+  if (!parsed) { alert('住所(📍)を含む内容が見つかりませんでした。CleanSiteの「🔗 教える」でコピーした内容をそのまま貼り付けてください。'); return; }
+  state.destinations.push({ label: parsed.name, address: parsed.address, fromCleanSite: true, fixedRank: null, fixedAbsolute: false });
+  document.getElementById('paste-import-text').value = '';
+  renderDestList();
+  alert(`「${parsed.name}」を目的地に追加しました`);
+});
+
+// --- ルートの保存・再利用 ---
+function loadSavedRoutes() {
+  try { return JSON.parse(localStorage.getItem('cr_saved_routes') || '[]'); } catch (e) { return []; }
+}
+function saveSavedRoutes(list) {
+  try { localStorage.setItem('cr_saved_routes', JSON.stringify(list)); return true; } catch (e) { return false; }
+}
+function renderSavedRoutesPanel() {
+  const body = document.getElementById('saved-routes-body');
+  const routes = loadSavedRoutes();
+  if (!routes.length) {
+    body.innerHTML = '<div class="note">保存されたルートはまだありません。目的地を入力して「💾 このルートを保存」を押すと、ここに表示されます。</div>';
+    return;
+  }
+  body.innerHTML = routes.map((r, i) => `
+    <div class="result-item" style="padding:10px 0;">
+      <div class="result-text" style="flex:1;">
+        <div style="font-weight:600;">${r.name}</div>
+        <div class="dist">目的地${r.destinations.length}件</div>
+      </div>
+      <div class="dest-actions">
+        <button class="to-cleansite-btn" data-i="${i}" data-act="load">呼び出す</button>
+        <button class="del-btn" data-i="${i}" data-act="delete">✕</button>
+      </div>
+    </div>
+  `).join('');
+  body.querySelectorAll('[data-act="load"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const r = routes[Number(btn.dataset.i)];
+      state.destinations = r.destinations.map(d => ({ ...d }));
+      if (r.startMode) {
+        state.startMode = r.startMode;
+        if (r.startMode === 'manual') { document.getElementById('seg-manual').click(); document.getElementById('start-address').value = r.startAddress || ''; }
+        else { document.getElementById('seg-gps').click(); }
+      }
+      renderDestList();
+      alert(`「${r.name}」を呼び出しました`);
+    });
+  });
+  body.querySelectorAll('[data-act="delete"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!confirm('このルートを削除しますか？')) return;
+      routes.splice(Number(btn.dataset.i), 1);
+      saveSavedRoutes(routes);
+      renderSavedRoutesPanel();
+    });
+  });
+}
+document.getElementById('save-route-btn').addEventListener('click', () => {
+  if (state.destinations.length < 2) { alert('目的地を2件以上追加してから保存してください'); return; }
+  const name = prompt('ルートの名前を入力してください(例: 月曜ルート)');
+  if (!name) return;
+  const routes = loadSavedRoutes();
+  routes.push({
+    name,
+    destinations: state.destinations.map(d => ({ ...d })),
+    startMode: state.startMode,
+    startAddress: state.startMode === 'manual' ? document.getElementById('start-address').value : '',
+  });
+  if (saveSavedRoutes(routes)) {
+    renderSavedRoutesPanel();
+    alert(`「${name}」として保存しました`);
+  } else {
+    alert('保存に失敗しました。CleanRouteをGitHub Pagesにアップロードした実機でお試しください。');
+  }
+});
+renderSavedRoutesPanel();
+</script>
+
+</body>
+</html>
