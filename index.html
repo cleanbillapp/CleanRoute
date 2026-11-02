@@ -390,6 +390,18 @@
     font-family: var(--font-main);
   }
   .kana-btn.active { background: var(--violet-deep); color: #fff; border-color: var(--violet-deep); }
+  .yomi-btn {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--sub);
+    font-size: 11px;
+    font-family: var(--font-main);
+  }
+  .yomi-btn.unset { color: var(--accent); border-color: var(--accent); }
   .font-scale-btn {
     border: 1.5px solid var(--line);
     background: var(--card);
@@ -620,7 +632,8 @@
       <h3>🏢 CleanSiteとの連携</h3>
       <div style="font-size:13px; color:var(--sub); line-height:2;">
         「入力」タブの「🔄 CleanSiteと同期」から、CleanSiteに登録した現場・スポットのデータを取り込めます(CleanSite側であらかじめGitHub連携の設定が必要です)。現場を選ぶと、その現場に紐づくスポットも一緒に候補として表示されます。<br>
-        逆に、CleanRouteで手入力した住所も「🏢 CleanSiteに登録」から、現場・スポット・取引先としてCleanSite側に書き戻せます。
+        逆に、CleanRouteで手入力した住所も「🏢 CleanSiteに登録」から、現場・スポット・取引先としてCleanSite側に書き戻せます。<br>
+        現場の検索は、全角/半角・大文字/小文字・ひらがな/カタカナの違いを気にせず入力できます。漢字で始まる現場は「漢字」ボタンでまとめて表示でき、「＋よみを登録」でよみを登録すると「あかさたな」のボタンやよみでの検索でも見つかるようになります(よみはCleanRoute内だけに保存され、CleanSite側のデータは変わりません)。
       </div>
     </div>
 
@@ -641,7 +654,8 @@
       <h3>💾 保存・削除</h3>
       <div style="font-size:13px; color:var(--sub); line-height:2;">
         よく使う目的地の組み合わせは「💾 このルートを保存」で名前を付けて保存でき、「📂 保存したルート」からいつでも呼び出せます。<br>
-        目的地をまとめて消したい時は「🗑️ 全て削除」を押してください(誤操作防止のため、2回連続でタップすると削除されます)。<br>
+        目的地をまとめて消したい時は「目的地」欄の「🗑️ 全て削除」を押してください(誤操作防止のため、2回連続でタップすると削除されます)。<br>
+        「CleanSiteの現場から追加」で選んだチェックだけを取り消したい時は、その欄に表示される「🗑️ 選択をクリア」を押してください。こちらは目的地には影響しません。<br>
         計算済みの結果やチェック状態は自動で保存されるので、アプリを閉じても消えません。
       </div>
     </div>
@@ -704,12 +718,37 @@ const KANA_GROUPS = [
 function kataToHira(str) {
   return str.replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
 }
-function matchesKana(name, label) {
+// 検索用の正規化: 全角英数→半角、大文字→小文字、カタカナ→ひらがな、空白は無視
+function normalizeForSearch(str) {
+  return kataToHira(String(str || '').normalize('NFKC').toLowerCase()).replace(/\s+/g, '');
+}
+function matchesQuery(name, query) {
+  const q = normalizeForSearch(query);
+  if (!q) return true;
+  return normalizeForSearch(name).includes(q);
+}
+// 漢字で始まる名前の「よみ」(CleanRoute内だけで保存。CleanSite側のデータは変更しない)
+function loadSiteYomi() {
+  try { return JSON.parse(localStorage.getItem('cr_site_yomi') || '{}'); } catch (e) { return {}; }
+}
+function saveSiteYomi(map) {
+  try { localStorage.setItem('cr_site_yomi', JSON.stringify(map)); } catch (e) {}
+}
+function startsWithKanji(name) {
+  return /^[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff々〆]/.test(String(name || '').normalize('NFKC').trim());
+}
+const SMALL_KANA = { 'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お','ゃ':'や','ゅ':'ゆ','ょ':'よ','っ':'つ','ゎ':'わ','ゔ':'う' };
+function matchesKana(name, label, yomi) {
   if (!label) return true;
-  if (label === 'ABC') return /^[A-Za-z]/.test(name.trim());
+  const norm = String(name || '').normalize('NFKC').trim();
+  if (label === '漢字') return startsWithKanji(norm);
+  if (label === 'ABC') return /^[A-Za-z]/.test(norm);
   const group = KANA_GROUPS.find(g => g.label === label);
   if (!group) return true;
-  const first = kataToHira(name.trim()).charAt(0);
+  // 漢字で始まる名前は、よみが登録されていればそのよみの頭文字で判定
+  const base = (startsWithKanji(norm) && yomi) ? String(yomi).normalize('NFKC').trim() : norm;
+  let first = kataToHira(base).charAt(0);
+  first = SMALL_KANA[first] || first;
   return group.chars.includes(first);
 }
 function kanaIndexHTML(idPrefix, activeLabel) {
@@ -717,6 +756,7 @@ function kanaIndexHTML(idPrefix, activeLabel) {
     <button type="button" class="kana-btn ${!activeLabel ? 'active' : ''}" data-kana="">全て</button>
     ${KANA_GROUPS.map(g => `<button type="button" class="kana-btn ${activeLabel === g.label ? 'active' : ''}" data-kana="${g.label}">${g.label}</button>`).join('')}
     <button type="button" class="kana-btn ${activeLabel === 'ABC' ? 'active' : ''}" data-kana="ABC">ABC</button>
+    <button type="button" class="kana-btn ${activeLabel === '漢字' ? 'active' : ''}" data-kana="漢字">漢字</button>
   </div>`;
 }
 
@@ -754,9 +794,15 @@ function renderCleanSitePanel() {
     return;
   }
 
+  const siteYomi = loadSiteYomi();
+  const sortKey = s => (startsWithKanji(s.name) && siteYomi[String(s.id)]) ? siteYomi[String(s.id)] : s.name;
   const sorted = [...sites]
-    .filter(s => s.name.includes(siteFilterQuery) && matchesKana(s.name, siteFilterKana))
-    .sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+    .filter(s => {
+      const yomi = siteYomi[String(s.id)] || '';
+      return (matchesQuery(s.name, siteFilterQuery) || (yomi && matchesQuery(yomi, siteFilterQuery)))
+        && matchesKana(s.name, siteFilterKana, yomi);
+    })
+    .sort((a, b) => sortKey(a).localeCompare(sortKey(b), 'ja'));
 
   // 検索で絞り込まれていても、選択中のものを見失わないように一覧を表示
   const selectedSiteNames = sites.filter(s => selectedCleanSiteIds.has(String(s.id))).map(s => s.name);
@@ -783,6 +829,9 @@ function renderCleanSitePanel() {
           <span>
             ${s.name}
             ${s.address ? `<span class="s-addr">📍 ${s.address}</span>` : `<span class="s-noaddr">住所未登録のため追加できません</span>`}
+            ${startsWithKanji(s.name) ? (siteYomi[String(s.id)]
+              ? `<button type="button" class="yomi-btn" data-site-id="${s.id}">よみ: ${siteYomi[String(s.id)]} ✏️</button>`
+              : `<button type="button" class="yomi-btn unset" data-site-id="${s.id}">＋よみを登録</button>`) : ''}
           </span>
         </label>
         ${relatedSpots.length ? `<div class="related-spots">
@@ -797,6 +846,7 @@ function renderCleanSitePanel() {
       }).join('') : '<div class="s-noaddr" style="padding:10px 2px;">該当する現場がありません</div>'}
     </div>
     <button class="primary" id="add-cleansite-btn" style="margin-top:10px;width:100%;">選択した現場・スポットを目的地に追加</button>
+    ${selectedAll.length ? `<button class="btn-danger-outline" id="clear-cleansite-selection-btn" style="margin-top:8px;width:100%;">🗑️ 選択をクリア</button>` : ''}
   `;
   document.getElementById('cleansite-search').addEventListener('input', (e) => {
     siteFilterQuery = e.target.value;
@@ -805,6 +855,22 @@ function renderCleanSitePanel() {
   document.querySelectorAll('#cleansite-kana-index .kana-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       siteFilterKana = btn.dataset.kana;
+      renderCleanSitePanel();
+    });
+  });
+  document.querySelectorAll('#cleansite-checklist .yomi-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      // ラベル内のボタンなので、チェックボックスが切り替わらないようにする
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btn.dataset.siteId;
+      const site = sites.find(x => String(x.id) === id);
+      const map = loadSiteYomi();
+      const input = prompt(`「${site ? site.name : ''}」のよみを入力してください(ひらがな・カタカナ)\n空欄にすると登録を解除します`, map[id] || '');
+      if (input === null) return; // キャンセル
+      const yomi = kataToHira(input.normalize('NFKC').trim());
+      if (yomi) map[id] = yomi; else delete map[id];
+      saveSiteYomi(map);
       renderCleanSitePanel();
     });
   });
@@ -843,6 +909,28 @@ function renderCleanSitePanel() {
     renderCleanSitePanel();
     if (skipped) alert(`住所が未登録の項目が${skipped}件あり、追加をスキップしました。`);
   });
+  const clearSelBtn = document.getElementById('clear-cleansite-selection-btn');
+  if (clearSelBtn) {
+    clearSelBtn.addEventListener('click', function () {
+      const btn = this;
+      if (btn.dataset.confirming === 'true') {
+        selectedCleanSiteIds = new Set();
+        selectedCleanSpotKeys = new Set();
+        renderCleanSitePanel();
+        return;
+      }
+      btn.textContent = '本当にクリア？';
+      btn.classList.add('confirming');
+      btn.dataset.confirming = 'true';
+      setTimeout(() => {
+        if (btn.dataset.confirming === 'true') {
+          btn.textContent = '🗑️ 選択をクリア';
+          btn.classList.remove('confirming');
+          btn.dataset.confirming = 'false';
+        }
+      }, 3000);
+    });
+  }
 }
 
 // --- CleanSiteのスポットデータ連携 ---
